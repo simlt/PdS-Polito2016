@@ -37,6 +37,8 @@
 
 #include <spinlock.h>
 
+#include "opt-threads.h"
+
 /*
  * Dijkstra-style semaphore.
  *
@@ -76,6 +78,12 @@ struct lock {
         char *lk_name;
         // add what you need here
         // (don't forget to mark things volatile as needed)
+#if OPT_THREADS
+        struct wchan *lk_wchan;
+        struct spinlock lk_lock;
+        struct thread *lk_owner;
+        volatile unsigned lk_count;
+#endif
 };
 
 struct lock *lock_create(const char *name);
