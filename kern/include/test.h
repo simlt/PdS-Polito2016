@@ -30,6 +30,9 @@
 #ifndef _TEST_H_
 #define _TEST_H_
 
+
+#include "opt-hello.h"
+
 /*
  * Declarations for test code and other miscellaneous high-level
  * functions.
@@ -104,5 +107,10 @@ void menu(char *argstr);
 /* The main function, called from start.S. */
 void kmain(char *bootstring);
 
+
+#if OPT_HELLO
+/* Hello */
+void hello(void);
+#endif
 
 #endif /* _TEST_H_ */
