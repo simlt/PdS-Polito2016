@@ -421,6 +421,9 @@ defoption netfs
 # Note that "emufs" is completely contained in the "emu" device.
 #
 
+defoption syscall
+optfile   syscall       syscall/stdio_syscall.c
+
 
 ########################################
 #                                      #

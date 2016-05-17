@@ -27,43 +27,77 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _SYSCALL_H_
-#define _SYSCALL_H_
+#include <types.h>
+#include <copyinout.h>
+#include <syscall.h>
+#include <lib.h>
+#include <kern/unistd.h>
+#include <kern/errno.h>
 
+int sys_write(int fd, const_userptr_t user_buf, size_t count, ssize_t* retval)
+{
+    int result = 0;
+    char* buffer = kmalloc(count);
+    //struct uio uio;
+    unsigned int i = 0;
 
-#include <cdefs.h> /* for __DEAD */
-#include "opt-syscall.h"
+    // Initialize retval
+    *retval = 0;
+    // Copy user buffer
+    result = copyin(user_buf, buffer, count);
+    if (result)
+        return result;
 
-struct trapframe; /* from <machine/trapframe.h> */
+    // should get entry from a file descriptor table in process struct
+    if ((fd == STDIN_FILENO) ||
+        (fd == STDOUT_FILENO) ||
+        (fd == STDERR_FILENO))
+    {
+        for (i=0; i < count; ++i)
+        {
+            (*retval)++;
+            putch(buffer[i]);
+        }
+    }
+    else
+        result = EBADF;
+    if (result)
+        return result;
+          
 
-/*
- * The system call dispatcher.
- */
+    return 0;
+}
 
-void syscall(struct trapframe *tf);
+int sys_read(int fd, userptr_t user_buf, size_t count, ssize_t* retval)
+{
+    int result = 0;
+    char* buffer = kmalloc(count);
+    //struct uio uio;
+    unsigned int i = 0;
 
-/*
- * Support functions.
- */
+    // Initialize retval
+    *retval = 0;
 
-/* Helper for fork(). You write this. */
-void enter_forked_process(struct trapframe *tf);
+    // should get entry from a file descriptor table in process struct
+    if ((fd == STDIN_FILENO) ||
+        (fd == STDOUT_FILENO) ||
+        (fd == STDERR_FILENO))
+    {
+        for (i=0; i < count; ++i)
+        {
+            (*retval)++;
+            buffer[i] = getch();
+        }
+    }
+    else
+        result = EBADF;
+    if (result)
+        return result;
 
-/* Enter user mode. Does not return. */
-__DEAD void enter_new_process(int argc, userptr_t argv, userptr_t env,
-		       vaddr_t stackptr, vaddr_t entrypoint);
+    // Write user buffer
+    result = copyout(buffer, user_buf, count);
+    if (result)
+        return result;
 
-
-/*
- * Prototypes for IN-KERNEL entry points for system call implementations.
- */
-
-int sys_reboot(int code);
-int sys___time(userptr_t user_seconds, userptr_t user_nanoseconds);
-
-#if OPT_SYSCALL
-int sys_write(int fd, const_userptr_t user_buf, size_t count, ssize_t* retval);
-int sys_read(int fd, userptr_t user_buf, size_t count, ssize_t* retval);
-#endif
-
-#endif /* _SYSCALL_H_ */
+    return 0;
+}
