@@ -27,44 +27,41 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _SYSCALL_H_
-#define _SYSCALL_H_
+#include <types.h>
+#include <syscall.h>
+#include <lib.h>
+#include <proc.h>
+#include <thread.h>
+#include <current.h>
 
+int sys__exit(int status)
+{
+    //int result;
+    struct proc *proc;
+    struct thread *cur;
 
-#include <cdefs.h> /* for __DEAD */
-#include "opt-syscall.h"
+    cur = curthread;
+    proc = cur->t_proc;
+    /*
+     * Detach from our process.
+     */
+    proc_remthread(cur);
 
-struct trapframe; /* from <machine/trapframe.h> */
+    /* Make sure we *are* detached */
+    KASSERT(cur->t_proc == NULL);
 
-/*
- * The system call dispatcher.
- */
+    // Cleanup process if last thread exited (there shouldn't be any race condition on check)
+    if (proc->p_numthreads == 0)
+        proc_destroy(proc);
+    proc = NULL;
 
-void syscall(struct trapframe *tf);
+    // Pass exit code to parent process if exists (for now we don't do anything)
+    (void)status;
 
-/*
- * Support functions.
- */
+    // Should also cleanup memory, files, etc
+    // Now return to kernel process. This does not return
+    thread_exit();
 
-/* Helper for fork(). You write this. */
-void enter_forked_process(struct trapframe *tf);
-
-/* Enter user mode. Does not return. */
-__DEAD void enter_new_process(int argc, userptr_t argv, userptr_t env,
-		       vaddr_t stackptr, vaddr_t entrypoint);
-
-
-/*
- * Prototypes for IN-KERNEL entry points for system call implementations.
- */
-
-int sys_reboot(int code);
-int sys___time(userptr_t user_seconds, userptr_t user_nanoseconds);
-
-#if OPT_SYSCALL
-int sys_write(int fd, const_userptr_t user_buf, size_t count, ssize_t* retval);
-int sys_read(int fd, userptr_t user_buf, size_t count, ssize_t* retval);
-int sys__exit(int status);
-#endif
-
-#endif /* _SYSCALL_H_ */
+    // We never reach this point
+    return 0;
+}

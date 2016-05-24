@@ -377,6 +377,10 @@ file      syscall/loadelf.c
 file      syscall/runprogram.c
 file      syscall/time_syscalls.c
 
+defoption syscall
+optfile   syscall       syscall/stdio_syscall.c
+optfile   syscall       syscall/proc_syscall.c
+
 #
 # Startup and initialization
 #
@@ -420,9 +424,6 @@ defoption netfs
 #
 # Note that "emufs" is completely contained in the "emu" device.
 #
-
-defoption syscall
-optfile   syscall       syscall/stdio_syscall.c
 
 
 ########################################

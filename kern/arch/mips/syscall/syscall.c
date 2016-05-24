@@ -125,7 +125,7 @@ syscall(struct trapframe *tf)
                                 (ssize_t*)&retval);
                 break;
             case SYS__exit:
-                // just ignore for now
+                err = sys__exit(tf->tf_a0);
                 break;
 #endif
 
